@@ -1,0 +1,66 @@
+{
+  "hotlines": [
+    {
+      "name": "SOS Femmes (Domestic Violence Hotline)",
+      "phone": "210 2840",
+      "hours": "24/7",
+      "description": "Free confidential support for women and children"
+    },
+    {
+      "name": "Police Emergency",
+      "phone": "999",
+      "hours": "24/7",
+      "description": "For immediate danger — call police"
+    },
+    {
+      "name": "MFPW Gender Based Violence Hotline",
+      "phone": "213 3049",
+      "hours": "Mon–Fri 9am–4pm",
+      "description": "Ministry of Family and Welfare support line"
+    },
+    {
+      "name": "Child Development Unit (child abuse)",
+      "phone": "113",
+      "hours": "24/7",
+      "description": "For children in danger or abuse situations"
+    },
+    {
+      "name": "Befrienders Mauritius (emotional support)",
+      "phone": "800 93 93",
+      "hours": "24/7",
+      "description": "Free, confidential listening service"
+    }
+  ],
+  "shelters": [
+    {
+      "name": "Centre Espoir, Rose Hill",
+      "phone": "454 2855",
+      "address": "Rose Hill, Plaines Wilhems",
+      "description": "Emergency shelter for women and children fleeing abuse"
+    },
+    {
+      "name": "SOS Femmes Shelter",
+      "phone": "210 2840",
+      "address": "Contact hotline for address",
+      "description": "Safe housing — address kept private for safety"
+    },
+    {
+      "name": "Centre Chrysalide",
+      "phone": "208 3534",
+      "address": "Port Louis area",
+      "description": "Reintegration support and temporary housing"
+    }
+  ],
+  "legal": [
+    {
+      "name": "Legal Aid Commission",
+      "phone": "212 3400",
+      "description": "Free legal help if you cannot afford a lawyer"
+    },
+    {
+      "name": "Citizens Advice Bureau",
+      "phone": "213 2023",
+      "description": "Free advice on legal rights and next steps"
+    }
+  ]
+}
