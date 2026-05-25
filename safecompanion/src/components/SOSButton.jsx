@@ -1,68 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useShake } from '../hooks/useShake';
+
+const WHATSAPP_NUMBER = '230XXXXXXXX'; // ← PUT YOUR TRUSTED CONTACT NUMBER HERE
+
+function sendWhatsApp(lat, lng) {
+  const link = `https://www.google.com/maps?q=${lat},${lng}`;
+  const msg = `🚨 EMERGENCY SOS! I need help right now.\n📍 My location: ${link}\nPlease call me or contact police (999) immediately.`;
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    for (let i = 0; i < 5; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = i % 2 === 0 ? 880 : 660;
+      osc.type = 'square';
+      gain.gain.value = 0.4;
+      osc.start(ctx.currentTime + i * 0.3);
+      osc.stop(ctx.currentTime + i * 0.3 + 0.25);
+    }
+  } catch {}
+}
 
 export default function SOSButton() {
-  const [activated, setActivated] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle | locating | activated
 
-  const triggerSOS = () => {
-    setActivated(true);
+  const triggerSOS = useCallback(() => {
+    if (status === 'activated') return;
+    setStatus('locating');
+    playAlarm();
 
-    // 1. Play alarm sound using Web Audio API
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    for (let i = 0; i < 3; i++) {
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.frequency.value = 880;
-      oscillator.type = 'square';
-      gainNode.gain.value = 0.3;
-      oscillator.start(audioCtx.currentTime + i * 0.4);
-      oscillator.stop(audioCtx.currentTime + i * 0.4 + 0.3);
-    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setStatus('activated');
+        sendWhatsApp(coords.latitude, coords.longitude);
+        setTimeout(() => setStatus('idle'), 15000);
+      },
+      () => {
+        // No GPS — send WhatsApp without location
+        setStatus('activated');
+        const msg = '🚨 EMERGENCY SOS! I need help. Could not get GPS location. Call me or call 999!';
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+        setTimeout(() => setStatus('idle'), 15000);
+      },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  }, [status]);
 
-    // 2. Get GPS location and show it
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        const { latitude, longitude } = pos.coords;
-        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        alert(`🚨 SOS ACTIVATED\n\nYour location:\n${mapsLink}\n\nShare this link with someone you trust or call 999 now.`);
-      }, () => {
-        alert('🚨 SOS ACTIVATED\n\nCall 999 NOW. Could not get your GPS location.');
-      });
-    }
-
-    // Reset after 10 seconds
-    setTimeout(() => setActivated(false), 10000);
-  };
+  // Shake detection auto-triggers SOS
+  useShake(triggerSOS);
 
   return (
-    <div style={styles.container}>
+    <div style={{ padding: '8px 0 16px' }}>
       <button
+        className={`sos-btn ${status === 'activated' ? 'activated' : ''}`}
         onClick={triggerSOS}
-        style={{ ...styles.btn, ...(activated ? styles.btnActive : {}) }}
+        disabled={status === 'locating'}
       >
-        {activated ? '🚨 SOS SENT — CALL 999 NOW' : '🆘 EMERGENCY SOS'}
+        {status === 'idle'      && '🆘 EMERGENCY SOS'}
+        {status === 'locating'  && '📍 Getting location...'}
+        {status === 'activated' && '🚨 SOS SENT — CALL 999 NOW'}
       </button>
-      <p style={styles.hint}>Tap for alarm + GPS location</p>
+      <p className="privacy-badge">
+        🤝 Shake your phone to trigger · Opens WhatsApp with GPS
+      </p>
     </div>
   );
 }
-
-const styles = {
-  container: { padding: '8px 0', textAlign: 'center' },
-  btn: {
-    width: '100%',
-    padding: '14px',
-    background: '#e53e3e',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    fontSize: 18,
-    fontWeight: 700,
-    cursor: 'pointer',
-    letterSpacing: 1,
-    transition: 'background 0.2s',
-  },
-  btnActive: { background: '#9b2c2c', animation: 'pulse 1s infinite' },
-  hint: { fontSize: 11, color: '#a0aec0', marginTop: 4 },
-};
