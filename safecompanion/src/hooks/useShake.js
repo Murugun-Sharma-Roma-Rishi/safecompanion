@@ -1,28 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function useShake(onShake, threshold = 18) {
+  const callbackRef = useRef(onShake);
+  useEffect(() => { callbackRef.current = onShake; }, [onShake]);
+
   useEffect(() => {
     let lastX = null, lastY = null, lastZ = null;
-
     const handleMotion = (e) => {
-      const { x, y, z } = e.accelerationIncludingGravity || {};
+      const acc = e.accelerationIncludingGravity;
+      if (!acc || acc.x === null) return;
+      const { x, y, z } = acc;
       if (lastX === null) { lastX = x; lastY = y; lastZ = z; return; }
-
       const delta = Math.abs(x - lastX) + Math.abs(y - lastY) + Math.abs(z - lastZ);
-      if (delta > threshold) onShake();
-
+      if (delta > threshold) callbackRef.current();
       lastX = x; lastY = y; lastZ = z;
     };
-
-    // iOS 13+ requires permission
-    if (typeof DeviceMotionEvent?.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(state => {
-        if (state === 'granted') window.addEventListener('devicemotion', handleMotion);
-      });
+    const register = () => window.addEventListener('devicemotion', handleMotion);
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(s => { if (s === 'granted') register(); }).catch(() => {});
     } else {
-      window.addEventListener('devicemotion', handleMotion);
+      register();
     }
-
     return () => window.removeEventListener('devicemotion', handleMotion);
-  }, [onShake, threshold]);
+  }, [threshold]);
 }

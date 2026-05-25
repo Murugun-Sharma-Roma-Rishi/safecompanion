@@ -8,32 +8,21 @@ import SOSButton from './SOSButton';
 import CheckIn from './CheckIn';
 import SelfDefence from './SelfDefence';
 import FakePolice from './FakePolice';
-const [showCheckin, setShowCheckin] = useState(false);
 
-// In JSX, after the app-shell div opens:
-{showCheckin && (
-  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-    <div style={{ background: 'white', borderRadius: 16, padding: 20, width: '100%' }}>
-      <CheckIn />
-      <button onClick={() => setShowCheckin(false)} className="btn btn-ghost" style={{ marginTop: 12 }}>Close</button>
-    </div>
-  </div>
-)}
 const tabs = [
-  { id: 'chat',     label: 'Chat',    icon: '💬' },
-  { id: 'sos',      label: 'SOS',     icon: '🆘' },
-  { id: 'journal',  label: 'Journal', icon: '📝' },
-  { id: 'help',     label: 'Help',    icon: '📞' },
-  { id: 'more',     label: 'More',    icon: '⋯'  },
+  { id: 'chat',    label: 'Chat',    icon: '💬' },
+  { id: 'sos',     label: 'SOS',     icon: '🆘' },
+  { id: 'journal', label: 'Journal', icon: '📝' },
+  { id: 'help',    label: 'Help',    icon: '📞' },
+  { id: 'more',    label: 'More',    icon: '⋯'  },
 ];
 
 export default function MainApp({ onExit }) {
   const [activeTab, setActiveTab] = useState('chat');
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [showCheckin, setShowCheckin] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef(null);
 
-  // Hidden exit: triple-tap the top bar title
   const handleTitleTap = () => {
     tapCount.current += 1;
     clearTimeout(tapTimer.current);
@@ -47,47 +36,42 @@ export default function MainApp({ onExit }) {
 
   return (
     <div className="app-shell">
+      {showCheckin && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.55)', zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 20, width: '100%' }}>
+            <CheckIn />
+            <button onClick={() => setShowCheckin(false)} className="btn btn-ghost" style={{ marginTop: 12 }}>Close</button>
+          </div>
+        </div>
+      )}
+
       <div className="top-bar">
-        <span
-          className="top-bar-title"
-          onClick={handleTitleTap}
-          style={{ cursor: 'default', userSelect: 'none' }}
-        >
+        <span className="top-bar-title" onClick={handleTitleTap} style={{ cursor: 'default', userSelect: 'none' }}>
           Safe Space
         </span>
-        <CheckIn compact />
+        <button onClick={() => setShowCheckin(true)} style={{
+          background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8,
+          color: 'white', padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600,
+        }}>
+          ⏱ Check-in
+        </button>
       </div>
 
       <div className="tab-content">
         {activeTab === 'chat'    && <AIChat />}
-        {activeTab === 'sos'     && (
-          <div>
-            <SOSButton />
-            <FakePolice />
-          </div>
-        )}
+        {activeTab === 'sos'     && <div><SOSButton /><FakePolice /></div>}
         {activeTab === 'journal' && <EvidenceJournal />}
-        {activeTab === 'help'    && (
-          <div>
-            <ResourceFinder />
-            <SelfDefence />
-          </div>
-        )}
-        {activeTab === 'more'    && (
-          <div>
-            <DangerQuiz />
-            <SafetyPlan />
-          </div>
-        )}
+        {activeTab === 'help'    && <div><ResourceFinder /><SelfDefence /></div>}
+        {activeTab === 'more'    && <div><DangerQuiz /><SafetyPlan /></div>}
       </div>
 
       <div className="bottom-nav">
         {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
+          <button key={tab.id} className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
             <span className="nav-icon">{tab.icon}</span>
             {tab.label}
           </button>
