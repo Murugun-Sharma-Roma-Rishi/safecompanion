@@ -40,11 +40,28 @@ export default function EvidenceJournal() {
   const addEntry = async () => {
     if (!form.description.trim()) return;
     setLoading(true);
-    const newEntry = { ...form, id: Date.now(), createdAt: new Date().toISOString() };
+
+    // Convert voiceBlob to base64 so it can be encrypted + stored
+    let voiceBase64 = null;
+    if (form.voiceBlob) {
+      voiceBase64 = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(form.voiceBlob);
+      });
+    }
+
+    const newEntry = {
+      ...form,
+      voiceBlob: undefined,   // don't store the blob object
+      voice: voiceBase64,     // store base64 instead
+      id: Date.now(),
+      createdAt: new Date().toISOString()
+    };
     const updated = [newEntry, ...entries];
     await saveEntries(updated);
     setEntries(updated);
-    setForm({ date: new Date().toISOString().slice(0, 10), description: '', location: '' });
+    setForm({ date: new Date().toISOString().slice(0, 10), description: '', location: '', photo: null, voiceBlob: null });
     setView('list');
     setLoading(false);
   };
@@ -76,28 +93,57 @@ export default function EvidenceJournal() {
 
   if (view === 'add') {
     return (
-      <div style={styles.container}>
-        <h2 style={styles.title}>Add Entry</h2>
-        <label style={styles.label}>Date</label>
+      <div className="card">
+        <p className="section-title">Add Entry</p>
+
+        <label className="input-label">Date</label>
         <input type="date" value={form.date}
           onChange={e => setForm({ ...form, date: e.target.value })}
-          style={styles.input} />
-        <label style={styles.label}>Location</label>
+          className="input" style={{ marginBottom: 12 }} />
+
+        <label className="input-label">Location</label>
         <input type="text" value={form.location}
           onChange={e => setForm({ ...form, location: e.target.value })}
           placeholder="Where did it happen?"
-          style={styles.input} />
-        <label style={styles.label}>What happened</label>
+          className="input" style={{ marginBottom: 12 }} />
+
+        <label className="input-label">What happened</label>
         <textarea value={form.description}
           onChange={e => setForm({ ...form, description: e.target.value })}
-          placeholder="Describe the incident in your own words..."
-          style={{ ...styles.input, height: 120, resize: 'vertical' }}
+          placeholder="Describe in your own words..."
+          className="input" style={{ height: 100, resize: 'vertical', marginBottom: 12 }} />
+
+        {/* PHOTO CAPTURE */}
+        <label className="input-label">Photo evidence (optional)</label>
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => setForm(f => ({ ...f, photo: ev.target.result }));
+            reader.readAsDataURL(file);
+          }}
+          style={{ marginBottom: 8 }}
         />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={addEntry} style={styles.btn} disabled={loading}>
+        {form.photo && (
+          <img src={form.photo} alt="Evidence" style={{ width: '100%', borderRadius: 10, marginBottom: 12, maxHeight: 200, objectFit: 'cover' }} />
+        )}
+
+        {/* VOICE RECORDING */}
+        <label className="input-label">Voice note (optional)</label>
+        <VoiceRecorder onRecorded={blob => setForm(f => ({ ...f, voiceBlob: blob }))} />
+        {form.voiceBlob && (
+          <audio controls src={URL.createObjectURL(form.voiceBlob)} style={{ width: '100%', marginBottom: 12 }} />
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <button onClick={addEntry} className="btn btn-primary" disabled={loading}>
             {loading ? 'Saving...' : 'Save Entry'}
           </button>
-          <button onClick={() => setView('list')} style={styles.cancelBtn}>Cancel</button>
+          <button onClick={() => setView('list')} className="btn btn-ghost">Cancel</button>
         </div>
       </div>
     );
