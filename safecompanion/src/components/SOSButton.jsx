@@ -1,6 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { useShake } from '../hooks/useShake';
+import { useImpactDetect } from '../hooks/useImpactDetect';
 
+// Inside the component, add:
+useImpactDetect((force) => {
+  console.log('Impact detected, force:', force);
+  triggerSOS();
+});
 const WHATSAPP_NUMBER = '230XXXXXXXX'; // ← PUT YOUR TRUSTED CONTACT NUMBER HERE
 
 function sendWhatsApp(lat, lng) {
