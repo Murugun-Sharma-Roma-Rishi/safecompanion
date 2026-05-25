@@ -8,7 +8,17 @@ import SOSButton from './SOSButton';
 import CheckIn from './CheckIn';
 import SelfDefence from './SelfDefence';
 import FakePolice from './FakePolice';
+const [showCheckin, setShowCheckin] = useState(false);
 
+// In JSX, after the app-shell div opens:
+{showCheckin && (
+  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ background: 'white', borderRadius: 16, padding: 20, width: '100%' }}>
+      <CheckIn />
+      <button onClick={() => setShowCheckin(false)} className="btn btn-ghost" style={{ marginTop: 12 }}>Close</button>
+    </div>
+  </div>
+)}
 const tabs = [
   { id: 'chat',     label: 'Chat',    icon: '💬' },
   { id: 'sos',      label: 'SOS',     icon: '🆘' },
