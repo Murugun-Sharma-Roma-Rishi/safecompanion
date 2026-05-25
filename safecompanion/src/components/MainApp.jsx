@@ -1,62 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import AIChat from './AIChat';
 import ResourceFinder from './ResourceFinder';
 import EvidenceJournal from './EvidenceJournal';
 import SafetyPlan from './SafetyPlan';
 import DangerQuiz from './DangerQuiz';
 import SOSButton from './SOSButton';
+import CheckIn from './CheckIn';
+import SelfDefence from './SelfDefence';
+import FakePolice from './FakePolice';
 
 const tabs = [
-  { id: 'chat',      label: '💬 Chat' },
-  { id: 'resources', label: '📍 Help' },
-  { id: 'journal',   label: '📝 Journal' },
-  { id: 'plan',      label: '🛡️ My Plan' },
-  { id: 'quiz',      label: '📊 Safety Check' },
+  { id: 'chat',     label: 'Chat',    icon: '💬' },
+  { id: 'sos',      label: 'SOS',     icon: '🆘' },
+  { id: 'journal',  label: 'Journal', icon: '📝' },
+  { id: 'help',     label: 'Help',    icon: '📞' },
+  { id: 'more',     label: 'More',    icon: '⋯'  },
 ];
 
 export default function MainApp({ onExit }) {
   const [activeTab, setActiveTab] = useState('chat');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef(null);
 
-  // Quick exit: goes to google.com immediately
-  const quickExit = () => {
-    sessionStorage.clear();
-    onExit();
-    window.location.replace('https://www.google.com');
+  // Hidden exit: triple-tap the top bar title
+  const handleTitleTap = () => {
+    tapCount.current += 1;
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 600);
+    if (tapCount.current >= 3) {
+      tapCount.current = 0;
+      sessionStorage.clear();
+      window.location.replace('https://www.google.com');
+    }
   };
 
   return (
-    <div style={styles.container}>
-      {/* Top bar */}
-      <div style={styles.topBar}>
-        <span style={styles.appName}>Safe Companion</span>
-        <button onClick={quickExit} style={styles.exitBtn}>
-          ✕ Exit Now
-        </button>
+    <div className="app-shell">
+      <div className="top-bar">
+        <span
+          className="top-bar-title"
+          onClick={handleTitleTap}
+          style={{ cursor: 'default', userSelect: 'none' }}
+        >
+          Safe Space
+        </span>
+        <CheckIn compact />
       </div>
 
-      {/* SOS always visible at top */}
-      <SOSButton />
-
-      {/* Tab content */}
-      <div style={styles.content}>
-        {activeTab === 'chat'      && <AIChat />}
-        {activeTab === 'resources' && <ResourceFinder />}
-        {activeTab === 'journal'   && <EvidenceJournal />}
-        {activeTab === 'plan'      && <SafetyPlan />}
-        {activeTab === 'quiz'      && <DangerQuiz />}
+      <div className="tab-content">
+        {activeTab === 'chat'    && <AIChat />}
+        {activeTab === 'sos'     && (
+          <div>
+            <SOSButton />
+            <FakePolice />
+          </div>
+        )}
+        {activeTab === 'journal' && <EvidenceJournal />}
+        {activeTab === 'help'    && (
+          <div>
+            <ResourceFinder />
+            <SelfDefence />
+          </div>
+        )}
+        {activeTab === 'more'    && (
+          <div>
+            <DangerQuiz />
+            <SafetyPlan />
+          </div>
+        )}
       </div>
 
-      {/* Bottom navigation */}
-      <div style={styles.navBar}>
+      <div className="bottom-nav">
         {tabs.map(tab => (
           <button
             key={tab.id}
+            className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
-            style={{
-              ...styles.navBtn,
-              ...(activeTab === tab.id ? styles.navBtnActive : {}),
-            }}
           >
+            <span className="nav-icon">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
@@ -64,14 +86,3 @@ export default function MainApp({ onExit }) {
     </div>
   );
 }
-
-const styles = {
-  container: { maxWidth: 480, margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column', background: '#f9f9f9' },
-  topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#4a5568', color: '#fff' },
-  appName: { fontWeight: 600, fontSize: 18 },
-  exitBtn: { background: '#e53e3e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 14 },
-  content: { flex: 1, overflow: 'auto', padding: 16 },
-  navBar: { display: 'flex', borderTop: '1px solid #e2e8f0', background: '#fff' },
-  navBtn: { flex: 1, padding: '10px 4px', border: 'none', background: 'none', fontSize: 11, cursor: 'pointer', color: '#718096' },
-  navBtnActive: { color: '#4a5568', borderTop: '2px solid #4a5568', fontWeight: 600 },
-};
