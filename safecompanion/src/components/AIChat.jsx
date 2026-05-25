@@ -1,43 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+const WELCOME = "Hi, I'm Companion. I'm here for you — everything you share stays private on your device. What's on your mind?";
+
 export default function AIChat() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hi, I'm here for you. Everything you share stays on your device. What's on your mind?" }
+    { role: 'assistant', content: WELCOME }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Auto-scroll to newest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, loading]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
-    const userMsg = { role: 'user', content: input };
+    const userMsg = { role: 'user', content: input.trim() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
+    textareaRef.current?.focus();
 
     try {
-      // Only send the last 10 messages (to keep it within API limits)
-      const recentMessages = newMessages.slice(-10);
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: recentMessages }),
+        body: JSON.stringify({ messages: newMessages.slice(-10) }),
       });
 
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "I'm having trouble connecting. If you're in danger, please call 999."
+        content: data.reply || "I'm here. Please call 999 if you're in immediate danger."
+      }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I'm having trouble connecting. If you're in danger, please call 999 now."
       }]);
     } finally {
       setLoading(false);
@@ -52,52 +55,52 @@ export default function AIChat() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.messages}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 120px)' }}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 8 }}>
         {messages.map((msg, i) => (
-          <div key={i} style={{
-            ...styles.bubble,
-            ...(msg.role === 'user' ? styles.userBubble : styles.aiBubble),
-          }}>
+          <div
+            key={i}
+            className={`bubble ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}
+          >
             {msg.content}
           </div>
         ))}
+
+        {/* Typing indicator */}
         {loading && (
-          <div style={styles.aiBubble}>
-            <span style={styles.typing}>● ● ●</span>
+          <div className="bubble bubble-ai" style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '12px 16px' }}>
+            <span className="typing-dot" />
+            <span className="typing-dot" />
+            <span className="typing-dot" />
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      <div style={styles.inputArea}>
+      {/* Input */}
+      <div style={{ display: 'flex', gap: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type here... (Enter to send)"
-          style={styles.textarea}
+          placeholder="Type here… (Enter to send)"
+          className="input"
           rows={2}
+          style={{ flex: 1, resize: 'none' }}
         />
-        <button onClick={sendMessage} style={styles.sendBtn} disabled={loading}>
-          Send
+        <button
+          onClick={sendMessage}
+          disabled={loading || !input.trim()}
+          className="btn btn-primary"
+          style={{ width: 'auto', padding: '0 16px', alignSelf: 'stretch' }}
+        >
+          ➤
         </button>
       </div>
 
-      <p style={styles.privacy}>🔒 This conversation is not saved to any server.</p>
+      <p className="privacy-badge">🔒 Not saved to any server</p>
     </div>
   );
 }
-
-const styles = {
-  container: { display: 'flex', flexDirection: 'column', height: '100%' },
-  messages: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 16 },
-  bubble: { maxWidth: '80%', padding: '10px 14px', borderRadius: 14, fontSize: 15, lineHeight: 1.5 },
-  userBubble: { alignSelf: 'flex-end', background: '#4a5568', color: '#fff', borderBottomRightRadius: 4 },
-  aiBubble: { alignSelf: 'flex-start', background: '#fff', color: '#2d3748', border: '1px solid #e2e8f0', borderBottomLeftRadius: 4 },
-  typing: { letterSpacing: 4, color: '#a0aec0' },
-  inputArea: { display: 'flex', gap: 8, marginTop: 8 },
-  textarea: { flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 15, resize: 'none', fontFamily: 'inherit' },
-  sendBtn: { padding: '0 18px', background: '#4a5568', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600 },
-  privacy: { fontSize: 11, color: '#a0aec0', textAlign: 'center', marginTop: 6 },
-};
