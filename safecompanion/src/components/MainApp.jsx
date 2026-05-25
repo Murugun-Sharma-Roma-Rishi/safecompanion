@@ -16,7 +16,35 @@ const tabs = [
   { id: 'help',    label: 'Help',    icon: '📞' },
   { id: 'more',    label: 'More',    icon: '⋯'  },
 ];
+function MoreMenu() {
+  const [screen, setScreen] = useState(null);
 
+  if (screen === 'quiz')   return <div><button onClick={() => setScreen(null)} style={backBtn}>← Back</button><DangerQuiz /></div>;
+  if (screen === 'plan')   return <div><button onClick={() => setScreen(null)} style={backBtn}>← Back</button><SafetyPlan /></div>;
+
+  return (
+    <div>
+      <p className="section-title">More Tools</p>
+      <p className="section-sub">Choose what you need right now.</p>
+      <div className="card" style={{ cursor: 'pointer' }} onClick={() => setScreen('quiz')}>
+        <div style={{ fontSize: 28, marginBottom: 6 }}>🔍</div>
+        <strong style={{ fontSize: 16 }}>Danger Assessment Quiz</strong>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Rate your current risk level and get guidance on next steps.</p>
+      </div>
+      <div className="card" style={{ cursor: 'pointer' }} onClick={() => setScreen('plan')}>
+        <div style={{ fontSize: 28, marginBottom: 6 }}>📋</div>
+        <strong style={{ fontSize: 16 }}>Safety Plan Builder</strong>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Build a personalised step-by-step escape plan.</p>
+      </div>
+    </div>
+  );
+}
+
+const backBtn = {
+  background: 'none', border: 'none', color: 'var(--primary)',
+  fontSize: 15, fontWeight: 600, cursor: 'pointer',
+  padding: '0 0 12px 0', display: 'block',
+};
 export default function MainApp({ onExit }) {
   const [activeTab, setActiveTab] = useState('chat');
   const [showCheckin, setShowCheckin] = useState(false);
@@ -66,7 +94,7 @@ export default function MainApp({ onExit }) {
         {activeTab === 'sos'     && <div><SOSButton /><FakePolice /></div>}
         {activeTab === 'journal' && <EvidenceJournal />}
         {activeTab === 'help'    && <div><ResourceFinder /><SelfDefence /></div>}
-        {activeTab === 'more'    && <div><DangerQuiz /><SafetyPlan /></div>}
+        {activeTab === 'more'    && <MoreMenu />}
       </div>
 
       <div className="bottom-nav">

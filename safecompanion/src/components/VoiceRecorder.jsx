@@ -10,21 +10,30 @@ export default function VoiceRecorder({ onRecorded }) {
   const start = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+
+      // Pick a format that works on both iOS Safari and Android Chrome
+      const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : '';
+
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       chunksRef.current = [];
-      mr.ondataavailable = e => chunksRef.current.push(e.data);
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/mp4' });
         onRecorded(blob);
         stream.getTracks().forEach(t => t.stop());
       };
-      mr.start();
+      mr.start(100); // collect data every 100ms — needed on some mobile browsers
       mediaRef.current = mr;
       setRecording(true);
       setSeconds(0);
       timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
-    } catch {
-      alert('Microphone access denied.');
+    } catch (err) {
+      console.error(err);
+      alert('Microphone access denied. Please allow microphone permission in your browser settings.');
     }
   };
 
@@ -43,9 +52,7 @@ export default function VoiceRecorder({ onRecorded }) {
       >
         {recording ? `⏹ Stop (${seconds}s)` : '🎙 Record Voice Note'}
       </button>
-      {recording && (
-        <span style={{ color: '#dc2626', fontSize: 13 }}>● Recording...</span>
-      )}
+      {recording && <span style={{ color: '#dc2626', fontSize: 13 }}>● Recording...</span>}
     </div>
   );
 }
