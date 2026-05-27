@@ -2,13 +2,20 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useShake } from '../hooks/useShake';
 import { useImpactDetect } from '../hooks/useImpactDetect';
 
-const WHATSAPP_NUMBER = '230XXXXXXXX'; // ← your number here
+function getContact() {
+  return localStorage.getItem('emergency_contact') || '';
+}
 
 function sendWhatsApp(lat, lng) {
+  const number = getContact();
+  if (!number) {
+    alert('⚠️ No emergency contact set. Please go to SOS tab → Set Emergency Contact before using SOS.');
+    return;
+  }
   const msg = lat
     ? `🚨 EMERGENCY SOS! I need help right now.\n📍 My location: https://www.google.com/maps?q=${lat},${lng}\nPlease call me or contact police (999) immediately.`
     : `🚨 EMERGENCY SOS! I need help. Could not get GPS. Please call me or call 999!`;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  window.open(`https://wa.me/${number}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function playAlarm() {
@@ -26,12 +33,58 @@ function playAlarm() {
   } catch (e) {}
 }
 
+function ContactSetup() {
+  const [value, setValue] = useState(localStorage.getItem('emergency_contact') || '');
+  const [saved, setSaved] = useState(false);
+
+  const save = () => {
+    const cleaned = value.replace(/\s+/g, '').replace(/^\+/, '');
+    if (!cleaned || cleaned.length < 7) {
+      alert('Please enter a valid WhatsApp number with country code, e.g. 23071234567');
+      return;
+    }
+    localStorage.setItem('emergency_contact', cleaned);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <p className="section-title">📱 Emergency Contact</p>
+      <p className="section-sub">Enter your trusted contact's WhatsApp number with country code. No + sign needed.</p>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
+        Example: <strong>23071234567</strong> (Mauritius = 230 + number)
+      </p>
+      <input
+        type="tel"
+        value={value}
+        onChange={e => { setValue(e.target.value); setSaved(false); }}
+        placeholder="e.g. 23071234567"
+        className="input"
+        style={{ marginBottom: 10 }}
+      />
+      <button onClick={save} className="btn btn-primary">
+        {saved ? '✓ Saved!' : 'Save Contact'}
+      </button>
+      {localStorage.getItem('emergency_contact') && (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+          ✅ Current: +{localStorage.getItem('emergency_contact')}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function SOSButton() {
   const [status, setStatus] = useState('idle');
   const statusRef = useRef('idle');
 
   const triggerSOS = useCallback(() => {
     if (statusRef.current !== 'idle') return;
+    if (!getContact()) {
+      alert('⚠️ No emergency contact set. Please set one below before using SOS.');
+      return;
+    }
     statusRef.current = 'locating';
     setStatus('locating');
     playAlarm();
@@ -61,11 +114,12 @@ export default function SOSButton() {
         onClick={triggerSOS}
         disabled={status === 'locating'}
       >
-        {status === 'idle'     && '🆘 EMERGENCY SOS'}
-        {status === 'locating' && '📍 Getting location...'}
-        {status === 'activated'&& '🚨 SOS SENT — CALL 999 NOW'}
+        {status === 'idle'      && '🆘 EMERGENCY SOS'}
+        {status === 'locating'  && '📍 Getting location...'}
+        {status === 'activated' && '🚨 SOS SENT — CALL 999 NOW'}
       </button>
       <p className="privacy-badge">🤝 Shake phone to trigger · Opens WhatsApp with GPS</p>
+      <ContactSetup />
     </div>
   );
 }

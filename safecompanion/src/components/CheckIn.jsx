@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const WHATSAPP_NUMBER = '230XXXXXXXX'; // ← same number as SOSButton
+function getContact() {
+  return localStorage.getItem('emergency_contact') || '';
+}
 
 export default function CheckIn() {
   const [deadline, setDeadline] = useState(null);
@@ -9,8 +11,13 @@ export default function CheckIn() {
   const deadlineRef = useRef(null);
 
   const triggerMissedAlert = () => {
+    const number = getContact();
+    if (!number) {
+      alert('⚠️ Check-in missed but no emergency contact is set. Please set one in the SOS tab.');
+      return;
+    }
     const msg = '🚨 SAFETY CHECK-IN MISSED!\nI set a check-in timer and did not confirm I\'m safe. Please check on me or call 999.\n\n(Automated alert from my safety app)';
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${number}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   useEffect(() => {
@@ -31,7 +38,14 @@ export default function CheckIn() {
     return () => clearInterval(interval);
   }, [deadline]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startTimer = () => setDeadline(Date.now() + minutes * 60 * 1000);
+  const startTimer = () => {
+    if (!getContact()) {
+      alert('⚠️ Please set an emergency contact in the SOS tab first.');
+      return;
+    }
+    setDeadline(Date.now() + minutes * 60 * 1000);
+  };
+
   const confirmSafe = () => { deadlineRef.current = null; setDeadline(null); setTimeLeft(null); };
 
   const fmt = (ms) => {
@@ -40,11 +54,17 @@ export default function CheckIn() {
   };
 
   const urgent = timeLeft !== null && timeLeft < 60000;
+  const hasContact = !!getContact();
 
   return (
     <div className="card">
       <p className="section-title">⏱ Check-in Timer</p>
       <p className="section-sub">If you don't tap "I'm Safe" before it ends, WhatsApp alert fires automatically.</p>
+      {!hasContact && (
+        <p style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 600, marginBottom: 10 }}>
+          ⚠️ No emergency contact set. Go to SOS tab to add one.
+        </p>
+      )}
       {!deadline ? (
         <div>
           <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>How many minutes?</label>

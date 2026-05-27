@@ -7,7 +7,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { messages } = req.body;
-
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'No messages provided' });
   }
@@ -32,7 +31,6 @@ Rules you must ALWAYS follow:
       parts: [{ text: m.content }],
     }));
 
-  // Gemini requires first message to be from user — skip any leading assistant messages
   const firstUserIndex = geminiMessages.findIndex(m => m.role === 'user');
   if (firstUserIndex === -1) {
     return res.status(400).json({ error: 'No user messages provided' });
@@ -48,10 +46,7 @@ Rules you must ALWAYS follow:
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: filteredMessages,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 300,
-          },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 300 },
         }),
       }
     );
