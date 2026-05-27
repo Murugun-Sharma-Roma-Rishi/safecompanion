@@ -37,6 +37,10 @@ Rules you must ALWAYS follow:
     return res.status(400).json({ error: 'First message must be from user' });
   }
 
+  console.log('GEMINI_KEY present:', !!process.env.GEMINI_KEY);
+  console.log('GEMINI_KEY length:', process.env.GEMINI_KEY?.length);
+  console.log('Messages count:', geminiMessages.length);
+
   try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${process.env.GEMINI_KEY}`,
@@ -55,10 +59,12 @@ Rules you must ALWAYS follow:
     );
 
     const data = await response.json();
+    console.log('Gemini status:', response.status);
+    console.log('Gemini response:', JSON.stringify(data));
 
     if (!response.ok) {
       console.error('Gemini error:', data);
-      return res.status(500).json({ reply: "I'm having trouble right now. If you're in danger, please call 999 immediately." });
+      return res.status(500).json({ reply: `DEBUG: ${response.status} - ${JSON.stringify(data)}` });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
@@ -67,6 +73,6 @@ Rules you must ALWAYS follow:
     return res.status(200).json({ reply });
   } catch (err) {
     console.error('Handler error:', err);
-    return res.status(500).json({ reply: "Connection issue. Please call 999 if you're in danger." });
+    return res.status(500).json({ reply: `DEBUG ERROR: ${err.message}` });
   }
 }
