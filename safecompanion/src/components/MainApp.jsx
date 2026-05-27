@@ -78,7 +78,7 @@ export default function MainApp({ onExit }) {
       )}
 
       <div className="top-bar">
-        <span className="top-bar-title" onClick={handleTitleTap} style={{ cursor: 'default', userSelect: 'none' }}>
+        <span className="top-bar-title" onClick={handleTitleTap} style={{ cursor: 'pointer', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}>
           Safe Space
         </span>
         <button onClick={() => setShowCheckin(true)} style={{
