@@ -1,7 +1,25 @@
 // AES-GCM encryption using the browser's built-in WebCrypto API
-// No library needed — it's built into every modern browser
 
-// Turn a password into a cryptographic key
+function toBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  // Process in chunks to avoid call stack overflow on large data
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function fromBase64(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 export async function getKey(password) {
   const enc = new TextEncoder();
   const keyMaterial = await window.crypto.subtle.importKey(
@@ -26,7 +44,6 @@ export async function getKey(password) {
   );
 }
 
-// Encrypt text → returns a base64 string
 export async function encrypt(text, password) {
   const key = await getKey(password);
   const enc = new TextEncoder();
@@ -37,15 +54,15 @@ export async function encrypt(text, password) {
     enc.encode(text)
   );
 
-  // Combine IV + encrypted data into one base64 string
-  const combined = new Uint8Array([...iv, ...new Uint8Array(encrypted)]);
-  return btoa(String.fromCharCode(...combined));
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  return toBase64(combined);
 }
 
-// Decrypt base64 string → returns original text
 export async function decrypt(base64, password) {
   const key = await getKey(password);
-  const combined = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const combined = fromBase64(base64);
   const iv = combined.slice(0, 12);
   const data = combined.slice(12);
 
